@@ -5,6 +5,7 @@ from hypothesis import given
 from hypothesis.strategies import lists
 
 from minitorch import MathTest
+import minitorch
 from minitorch.operators import (
     add,
     addLists,
@@ -33,7 +34,7 @@ from .strategies import assert_close, small_floats
 @pytest.mark.task0_1
 @given(small_floats, small_floats)
 def test_same_as_python(x: float, y: float) -> None:
-    "Check that the main operators all return the same value of the python version"
+    """Check that the main operators all return the same value of the python version"""
     assert_close(mul(x, y), x * y)
     assert_close(add(x, y), x + y)
     assert_close(neg(x), -x)
@@ -69,7 +70,7 @@ def test_id(a: float) -> None:
 @pytest.mark.task0_1
 @given(small_floats)
 def test_lt(a: float) -> None:
-    "Check that a - 1.0 is always less than a"
+    """Check that a - 1.0 is always less than a"""
     assert lt(a - 1.0, a) == 1.0
     assert lt(a, a - 1.0) == 0.0
 
@@ -107,41 +108,86 @@ def test_sigmoid(a: float) -> None:
     * It crosses 0 at 0.5
     * It is  strictly increasing.
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    s = sigmoid(a)
+    assert 0 <= s <= 1
+    assert_close(1 - s, sigmoid(-a))
+    assert sigmoid(0) == 0.5
+    assert sigmoid(a - 1) < sigmoid(a + 1) if - \
+        6 <= a <= 6 else sigmoid(a - 1) <= sigmoid(a + 1)
 
 
 @pytest.mark.task0_2
 @given(small_floats, small_floats, small_floats)
 def test_transitive(a: float, b: float, c: float) -> None:
-    "Test the transitive property of less-than (a < b and b < c implies a < c)"
-    raise NotImplementedError("Need to include this file from past assignment.")
+    """Test the transitive property of less-than (a < b and b < c implies a < c)"""
+    a_lt_b = lt(a, b)
+    a_lt_c = lt(a, c)
+    b_lt_a = lt(b, a)
+    b_lt_c = lt(b, c)
+    c_lt_a = lt(c, a)
+    c_lt_b = lt(c, b)
+
+    if a_lt_b:
+        if b_lt_c:
+            assert a_lt_c
+        elif c_lt_a:
+            assert c_lt_b
+    if a_lt_c:
+        if c_lt_b:
+            assert a_lt_b
+        if b_lt_a:
+            assert b_lt_c
+    if b_lt_a:
+        if a_lt_c:
+            assert b_lt_c
+        if c_lt_b:
+            assert c_lt_a
+    if b_lt_c:
+        if c_lt_a:
+            assert b_lt_a
+        if a_lt_b:
+            assert a_lt_c
+    if c_lt_a:
+        if a_lt_b:
+            assert c_lt_b
+        if b_lt_c:
+            assert b_lt_a
+    if c_lt_b:
+        if b_lt_a:
+            assert c_lt_a
+        if a_lt_c:
+            assert a_lt_b
 
 
 @pytest.mark.task0_2
-def test_symmetric() -> None:
-    """
-    Write a test that ensures that :func:`minitorch.operators.mul` is symmetric, i.e.
+@given(small_floats, small_floats)
+def test_symmetric(a: float, b: float) -> None:
+    """Write a test that ensures that :func:`minitorch.operators.mul` is symmetric, i.e.
     gives the same value regardless of the order of its input.
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    assert_close(mul(a, b), mul(b, a))
 
 
 @pytest.mark.task0_2
-def test_distribute() -> None:
-    r"""
-    Write a test that ensures that your operators distribute, i.e.
+@given(small_floats, small_floats, small_floats)
+def test_distribute(x: float, y: float, z: float) -> None:
+    r"""Write a test that ensures that your operators distribute, i.e.
     :math:`z \times (x + y) = z \times x + z \times y`
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    assert_close(z * add(x, y), add(z * x, z * y))
+    assert_close(mul(z, x + y), mul(z, x) + mul(z, y))
+    assert_close(max(x, min(y, z)), min(max(x, y), max(x, z)))
+    assert_close(x + max(y, z), max(x + y, x + z))
 
 
 @pytest.mark.task0_2
-def test_other() -> None:
-    """
-    Write a test that ensures some other property holds for your functions.
-    """
-    raise NotImplementedError("Need to include this file from past assignment.")
-
+@given(small_floats, small_floats, small_floats)
+def test_associativity(x: float, y: float, z: float) -> None:
+    """Write a test that ensures some other property holds for your functions.
+    Test that operators are associative (i. e. (a + b) + c = a + (b + c))."""
+    assert_close(add(add(x, y), z), add(x, add(y, z)))
+    assert_close(mul(mul(x, y), z), mul(x, mul(y, z)))
+    assert_close(max(x, max(y, z)), max(max(x, y), z))
 
 # ## Task 0.3  - Higher-order functions
 
@@ -164,17 +210,16 @@ def test_zip_with(a: float, b: float, c: float, d: float) -> None:
     lists(small_floats, min_size=5, max_size=5),
 )
 def test_sum_distribute(ls1: List[float], ls2: List[float]) -> None:
-    """
-    Write a test that ensures that the sum of `ls1` plus the sum of `ls2`
+    """Write a test that ensures that the sum of `ls1` plus the sum of `ls2`
     is the same as the sum of each element of `ls1` plus each element of `ls2`.
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    assert_close(sum(ls1 + ls2), sum(ls1) + sum(ls2))
 
 
 @pytest.mark.task0_3
 @given(lists(small_floats))
 def test_sum(ls: List[float]) -> None:
-    assert_close(sum(ls), sum(ls))
+    assert_close(sum(ls), minitorch.operators.sum(ls))
 
 
 @pytest.mark.task0_3
