@@ -54,7 +54,7 @@ def neg(x: float) -> float:
     return float(-x)
 
 
-def lt(x: float, y: float) -> bool:
+def lt(x: float, y: float) -> float:
     'Checks if one number is less than another'
     return 1.0 if x < y else 0.0
 
